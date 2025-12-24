@@ -1,0 +1,9 @@
+.git
+.github
+node_modules
+*.md
+.gitignore
+.dockerignore
+GCP_SA_KEY.json
+*.log
+.DS_Store
