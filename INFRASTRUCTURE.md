@@ -1,8 +1,10 @@
 # KeyView Platform - Current Infrastructure Documentation
 
-**Last Updated**: 2025-12-25
-**Status**: Phase 1 - Basic Website Deployed
-**Live URL**: https://keyview-website-6yap3jdvaa-ts.a.run.app
+**Last Updated**: 2025-12-25 23:00 AEST
+**Status**: Phase 2 - Multi-Service Architecture, N8N Infrastructure Setup (Deployment Debugging)
+**Live URLs**:
+- Website: https://keyview-website-6yap3jdvaa-ts.a.run.app ✅
+- N8N: (deployment in progress) 🔄
 
 ---
 
@@ -649,3 +651,112 @@ node notion-sync.js
 **End of Infrastructure Documentation**
 
 For project roadmap and future plans, see: [ROADMAP.md](ROADMAP.md)
+
+---
+
+## N8N Service Infrastructure (Phase 2)
+
+### Cloud SQL Database
+**Instance Name**: keyview-db
+**Database Version**: PostgreSQL 15
+**Tier**: db-f1-micro (smallest tier)
+**Region**: australia-southeast1-a
+**Public IP**: 34.151.76.197
+**Status**: ✅ Running
+
+**Configuration**:
+- Storage: 10GB SSD with auto-increase
+- Backups: Daily at 3:00 AM AEST
+- Maintenance Window: Sundays at 4:00 AM AEST
+- Database: `n8n`
+- User: `postgres`
+- Password: Stored in Secret Manager (`DB_PASSWORD`)
+
+**Cost**: ~$10-15/month (24/7 running)
+
+### Secret Manager
+**Status**: ✅ Configured
+**Secrets Stored**:
+1. `DB_HOST` - Database IP address (34.151.76.197)
+2. `DB_NAME` - Database name (n8n)
+3. `DB_USER` - Database user (postgres)
+4. `DB_PASSWORD` - Database password (auto-generated 32-char)
+5. `N8N_BASIC_AUTH_USER` - N8N admin username (admin)
+6. `N8N_BASIC_AUTH_PASSWORD` - N8N admin password (auto-generated 24-char)
+
+**IAM Access**:
+- Service Account: `225226659046-compute@developer.gserviceaccount.com`
+- Role: `roles/secretmanager.secretAccessor`
+- Applied to: All 6 secrets
+
+### N8N Service Configuration
+**Service Name**: n8n-service
+**Status**: 🔄 Deployment Debugging
+**Docker Image**: Based on `n8nio/n8n:latest`
+**Port**: 8080
+**Resources**:
+- Memory: 1Gi
+- CPU: 1
+- Min Instances: 1 (always-on)
+- Max Instances: 10
+
+**Environment Variables**:
+- N8N_PORT=8080
+- N8N_PROTOCOL=https
+- DB_TYPE=postgresdb
+- DB_POSTGRESDB_PORT=5432
+- N8N_BASIC_AUTH_ACTIVE=true
+- EXECUTIONS_PROCESS=main
+- EXECUTIONS_MODE=regular
+- GENERIC_TIMEZONE=Australia/Sydney
+
+**Cloud SQL Connection**:
+- Method: Cloud SQL Proxy (via Cloud Run --add-cloudsql-instances)
+- Instance: key-view-website:australia-southeast1:keyview-db
+
+**Current Issues**:
+- Container startup timeout - debugging in progress
+- See [SESSION-SUMMARY.md](SESSION-SUMMARY.md) for details
+
+### Updated Multi-Service Architecture
+```
+Developer Machine
+    │
+    └─ Repository: keyview-website/
+        ├─ services/
+        │   ├─ website/
+        │   │   ├─ Dockerfile
+        │   │   ├─ nginx.conf
+        │   │   ├─ cloudbuild.yaml
+        │   │   └─ public/index.html
+        │   └─ n8n/
+        │       ├─ Dockerfile
+        │       └─ cloudbuild.yaml
+        ├─ .github/workflows/
+        │   └─ deploy-services.yml
+        ├─ INFRASTRUCTURE.md
+        ├─ ROADMAP.md
+        ├─ SESSION-SUMMARY.md
+        └─ .env (local, not in Git)
+
+        ▼ (git push)
+
+GitHub Actions
+    ├─ Website: Auto-deploy on push to main
+    └─ N8N: Manual deploy via workflow_dispatch
+
+        ▼
+
+Google Cloud Platform
+    ├─ Cloud Run Services
+    │   ├─ keyview-website (✅ running)
+    │   └─ n8n-service (🔄 deploying)
+    ├─ Cloud SQL
+    │   └─ keyview-db (✅ running)
+    ├─ Secret Manager
+    │   └─ 6 secrets (✅ configured)
+    └─ Container Registry
+        ├─ keyview-website images
+        └─ n8n images
+```
+
