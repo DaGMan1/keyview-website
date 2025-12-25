@@ -7,3 +7,6 @@ node_modules
 GCP_SA_KEY.json
 *.log
 .DS_Store
+.env
+.env.*
+services/

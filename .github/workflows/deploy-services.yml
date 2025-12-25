@@ -1,0 +1,139 @@
+name: Deploy Services to Cloud Run
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 'Which service to deploy (website, n8n, or all)'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - website
+          - n8n
+
+env:
+  PROJECT_ID: key-view-website
+  REGION: australia-southeast1
+
+jobs:
+  deploy-website:
+    name: Deploy Website Service
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' && (github.event.inputs.service == 'all' || github.event.inputs.service == 'website'))
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker
+
+      - name: Submit build to Cloud Build (Website)
+        run: |
+          gcloud builds submit \
+            --config=services/website/cloudbuild.yaml \
+            --substitutions=COMMIT_SHA=${{ github.sha }}
+
+      - name: Get Cloud Run URL
+        id: get-url
+        run: |
+          URL=$(gcloud run services describe keyview-website \
+            --region=${{ env.REGION }} \
+            --format='value(status.url)')
+          echo "url=$URL" >> $GITHUB_OUTPUT
+          echo "Deployed to: $URL"
+
+      - name: Deployment Summary
+        run: |
+          echo "### Website Deployed! :rocket:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Service:** keyview-website" >> $GITHUB_STEP_SUMMARY
+          echo "**Region:** ${{ env.REGION }}" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** ${{ steps.get-url.outputs.url }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+
+  deploy-n8n:
+    name: Deploy N8N Service
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' &&
+      (github.event.inputs.service == 'all' || github.event.inputs.service == 'n8n')
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker
+
+      - name: Get Cloud Run service URL
+        id: get-future-url
+        run: |
+          # This will be the URL after deployment
+          echo "n8n_host=n8n-service-6yap3jdvaa-ts.a.run.app" >> $GITHUB_OUTPUT
+          echo "webhook_url=https://n8n-service-6yap3jdvaa-ts.a.run.app" >> $GITHUB_OUTPUT
+
+      - name: Submit build to Cloud Build (N8N)
+        env:
+          N8N_HOST: ${{ steps.get-future-url.outputs.n8n_host }}
+          WEBHOOK_URL: ${{ steps.get-future-url.outputs.webhook_url }}
+          N8N_EDITOR_BASE_URL: ${{ steps.get-future-url.outputs.webhook_url }}
+        run: |
+          gcloud builds submit \
+            --config=services/n8n/cloudbuild.yaml \
+            --substitutions=COMMIT_SHA=${{ github.sha }},_N8N_HOST=$N8N_HOST,_WEBHOOK_URL=$WEBHOOK_URL,_N8N_EDITOR_BASE_URL=$N8N_EDITOR_BASE_URL
+
+      - name: Get actual Cloud Run URL
+        id: get-url
+        run: |
+          URL=$(gcloud run services describe n8n-service \
+            --region=${{ env.REGION }} \
+            --format='value(status.url)')
+          echo "url=$URL" >> $GITHUB_OUTPUT
+          echo "Deployed to: $URL"
+
+      - name: Deployment Summary
+        run: |
+          echo "### N8N Deployed! :rocket:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Service:** n8n-service" >> $GITHUB_STEP_SUMMARY
+          echo "**Region:** ${{ env.REGION }}" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** ${{ steps.get-url.outputs.url }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Username:** admin" >> $GITHUB_STEP_SUMMARY
+          echo "**Password:** (stored in Secret Manager)" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
