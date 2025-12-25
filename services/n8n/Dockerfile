@@ -1,28 +1,23 @@
-FROM n8nio/n8n:latest
+FROM n8nio/n8n:1.19.4
 
-# User runs as node by default in the base image
-USER root
-
-# Cloud Run specific configurations
+# Cloud Run configuration
 ENV N8N_PORT=8080
+ENV N8N_HOST=0.0.0.0
 ENV N8N_PROTOCOL=https
 
-# Database configuration (loaded from secrets at runtime)
-ENV DB_TYPE=postgresdb
-ENV DB_POSTGRESDB_PORT=5432
+# Disable database for initial testing (use SQLite default)
+# ENV DB_TYPE=postgresdb
 
-# N8N configuration
+# Basic auth
 ENV N8N_BASIC_AUTH_ACTIVE=true
+
+# Execution settings
 ENV EXECUTIONS_PROCESS=main
 ENV EXECUTIONS_MODE=regular
 ENV N8N_METRICS=false
 ENV GENERIC_TIMEZONE=Australia/Sydney
 
-# Expose port for Cloud Run
+# Expose port
 EXPOSE 8080
 
-# Switch back to node user
-USER node
-
-# The base image already has the correct ENTRYPOINT and CMD
-# No need to override
+# The base image handles the rest

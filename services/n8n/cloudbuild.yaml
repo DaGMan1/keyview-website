@@ -34,9 +34,12 @@ steps:
       - '--set-env-vars'
       - 'N8N_HOST=${_N8N_HOST},WEBHOOK_URL=${_WEBHOOK_URL},N8N_EDITOR_BASE_URL=${_N8N_EDITOR_BASE_URL}'
       - '--set-secrets'
-      - 'DB_HOST=DB_HOST:latest,DB_NAME=DB_NAME:latest,DB_USER=DB_USER:latest,DB_PASSWORD=DB_PASSWORD:latest,N8N_BASIC_AUTH_USER=N8N_BASIC_AUTH_USER:latest,N8N_BASIC_AUTH_PASSWORD=N8N_BASIC_AUTH_PASSWORD:latest'
-      - '--add-cloudsql-instances'
-      - '$PROJECT_ID:australia-southeast1:keyview-db'
+      - 'N8N_BASIC_AUTH_USER=N8N_BASIC_AUTH_USER:latest,N8N_BASIC_AUTH_PASSWORD=N8N_BASIC_AUTH_PASSWORD:latest'
+      # Removed database connection for initial deployment test
+      # - '--set-secrets'
+      # - 'DB_HOST=DB_HOST:latest,DB_NAME=DB_NAME:latest,DB_USER=DB_USER:latest,DB_PASSWORD=DB_PASSWORD:latest'
+      # - '--add-cloudsql-instances'
+      # - '$PROJECT_ID:australia-southeast1:keyview-db'
 
 substitutions:
   _N8N_HOST: 'n8n-service-6yap3jdvaa-ts.a.run.app'
