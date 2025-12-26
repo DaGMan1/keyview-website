@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       service:
-        description: 'Which service to deploy (website, n8n, or all)'
+        description: 'Which service to deploy (website, n8n, landing-page-generator, or all)'
         required: true
         default: 'all'
         type: choice
@@ -15,6 +15,7 @@ on:
           - all
           - website
           - n8n
+          - landing-page-generator
 
 env:
   PROJECT_ID: key-view-website
@@ -136,4 +137,56 @@ jobs:
           echo "**URL:** ${{ steps.get-url.outputs.url }}" >> $GITHUB_STEP_SUMMARY
           echo "**Username:** admin" >> $GITHUB_STEP_SUMMARY
           echo "**Password:** (stored in Secret Manager)" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+
+  deploy-landing-page-generator:
+    name: Deploy Landing Page Generator
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' &&
+      (github.event.inputs.service == 'all' || github.event.inputs.service == 'landing-page-generator')
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker
+
+      - name: Submit build to Cloud Build (Landing Page Generator)
+        run: |
+          gcloud builds submit \
+            --config=services/landing-page-generator/cloudbuild.yaml \
+            --substitutions=COMMIT_SHA=${{ github.sha }}
+
+      - name: Get Cloud Run URL
+        id: get-url
+        run: |
+          URL=$(gcloud run services describe landing-page-generator \
+            --region=${{ env.REGION }} \
+            --format='value(status.url)')
+          echo "url=$URL" >> $GITHUB_OUTPUT
+          echo "Deployed to: $URL"
+
+      - name: Deployment Summary
+        run: |
+          echo "### Landing Page Generator Deployed! :rocket:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Service:** landing-page-generator" >> $GITHUB_STEP_SUMMARY
+          echo "**Region:** ${{ env.REGION }}" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** ${{ steps.get-url.outputs.url }}" >> $GITHUB_STEP_SUMMARY
           echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY

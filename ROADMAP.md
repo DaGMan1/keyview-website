@@ -353,3 +353,153 @@ User → Domain → Cloud Run → N8N Workflows → Database/Sheets
 **Last Updated**: 2025-12-25
 **Status**: Phase 1 - Infrastructure Foundation
 **Next Review**: After Notion integration complete
+
+---
+
+## Phase 9: AI-Powered Landing Page Generator
+**Goal**: Create a system to generate custom 3D cinematic landing pages from brand documents
+
+### 9.1 Brand Document Upload System
+- [ ] Design file upload interface
+- [ ] Implement secure file storage (Cloud Storage)
+- [ ] Support multiple file formats (PDF, DOCX, images)
+- [ ] File validation and virus scanning
+- [ ] Create upload API endpoint
+
+### 9.2 Questionnaire Form
+- [ ] Design brand questionnaire (company info, tone, style, etc.)
+- [ ] Build dynamic form interface
+- [ ] Form validation and error handling
+- [ ] Save form responses to database
+- [ ] Progress tracking for multi-step form
+
+**Key Questions to Capture**:
+- Company name and tagline
+- Target audience
+- Brand personality (professional, playful, luxurious, etc.)
+- Color preferences
+- Key features/services to highlight
+- Call-to-action goals
+
+### 9.3 AI Content Analysis & Generation
+- [ ] Choose AI provider (OpenAI GPT-4, Claude, etc.)
+- [ ] Build document parsing system
+- [ ] Extract brand guidelines from documents
+- [ ] Generate landing page content (headlines, copy, CTAs)
+- [ ] Create style guide from brand analysis
+- [ ] Generate color palette and typography suggestions
+
+### 9.4 3D Cinematic Landing Page Generator
+- [ ] Choose 3D library (Three.js, React Three Fiber, or Spline)
+- [ ] Create landing page templates
+- [ ] Implement 3D animations and transitions
+- [ ] Dynamic content injection
+- [ ] Responsive design for all devices
+- [ ] Performance optimization
+
+**3D Elements to Include**:
+- Animated hero section with 3D objects
+- Parallax scrolling effects
+- Interactive 3D product showcases
+- Smooth scroll animations
+- Particle effects
+- Background animations
+
+### 9.5 Integration & N8N Workflow
+- [ ] Create N8N workflow to orchestrate the process:
+  1. Trigger on form submission
+  2. Upload brand document to Cloud Storage
+  3. Call AI API to analyze document
+  4. Generate landing page content
+  5. Create 3D landing page from template
+  6. Deploy to unique URL
+  7. Send confirmation email with preview link
+
+### 9.6 Preview & Deployment System
+- [ ] Generate preview URLs for clients
+- [ ] Allow edits and regeneration
+- [ ] One-click deployment to custom domain
+- [ ] Version history and rollback
+- [ ] Export landing page code
+
+---
+
+## Technology Stack Recommendations
+
+### Frontend (Landing Page Generator)
+- **Framework**: Next.js 14 (React)
+- **3D Graphics**: React Three Fiber + Three.js
+- **Animations**: Framer Motion + GSAP
+- **Styling**: Tailwind CSS
+- **Forms**: React Hook Form + Zod validation
+
+### Backend
+- **API**: Next.js API routes or separate Node.js service
+- **File Storage**: Google Cloud Storage
+- **AI**: OpenAI GPT-4 or Claude API
+- **Database**: PostgreSQL (existing Cloud SQL)
+
+### Infrastructure
+- **Hosting**: Cloud Run (containerized Next.js)
+- **CDN**: Cloud CDN for assets
+- **Domain**: Subdomain like `create.keyview.com.au`
+
+### N8N Integration
+- **Trigger**: Webhook from form submission
+- **Actions**:
+  1. Save to database
+  2. Upload files to Cloud Storage
+  3. Call AI API
+  4. Generate landing page
+  5. Deploy to Cloud Run
+  6. Send notification email
+
+---
+
+## Implementation Approach
+
+### Quick Prototype (1-2 weeks)
+1. Simple upload form with basic questions
+2. Manual AI analysis (you paste brand guidelines)
+3. Pre-built template with basic 3D effects
+4. Static deployment
+
+### Full MVP (4-6 weeks)
+1. Automated AI analysis
+2. Multiple 3D templates to choose from
+3. Dynamic content injection
+4. N8N workflow automation
+5. Client preview and approval system
+
+### Future Enhancements
+- Real-time collaboration
+- A/B testing different designs
+- Analytics integration
+- Custom 3D model uploads
+- White-label for agencies
+
+---
+
+## Cost Estimates
+
+### Development Costs
+- 3D library: Free (Three.js)
+- AI API calls: ~$0.03-0.10 per generation
+- Cloud Storage: ~$0.02/GB/month
+- Additional Cloud Run instance: ~$15-30/month
+
+### Per Landing Page Generation
+- AI analysis: ~$0.05-0.10
+- Storage: ~$0.01
+- **Total per generation**: ~$0.06-0.11
+
+---
+
+## Next Steps
+
+1. Review and approve this feature addition
+2. Decide on technology stack
+3. Create detailed wireframes for upload form
+4. Choose 3D template style
+5. Begin Phase 9.1 (file upload system)
+
