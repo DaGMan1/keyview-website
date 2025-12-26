@@ -33,8 +33,6 @@ steps:
       - '10'
       - '--set-env-vars'
       - 'GCP_PROJECT_ID=${PROJECT_ID},GCS_BUCKET_NAME=keyview-brand-documents'
-      - '--set-secrets'
-      - 'GCP_KEY_FILE=/secrets/gcp-key:latest'
 
 images:
   - 'gcr.io/$PROJECT_ID/landing-page-generator:$COMMIT_SHA'

@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Storage } from '@google-cloud/storage';
 
 // Initialize Google Cloud Storage
+// When running in Cloud Run, use Application Default Credentials
+// For local development, provide GCP_KEY_FILE in .env.local
 const storage = new Storage({
   projectId: process.env.GCP_PROJECT_ID,
-  keyFilename: process.env.GCP_KEY_FILE,
+  ...(process.env.GCP_KEY_FILE && { keyFilename: process.env.GCP_KEY_FILE }),
 });
 
 const bucketName = process.env.GCS_BUCKET_NAME || 'keyview-brand-documents';
