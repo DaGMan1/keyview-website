@@ -1,10 +1,11 @@
 # KeyView Platform - Current Infrastructure Documentation
 
-**Last Updated**: 2025-12-25 23:00 AEST
-**Status**: Phase 2 - Multi-Service Architecture, N8N Infrastructure Setup (Deployment Debugging)
+**Last Updated**: 2025-12-26 11:20 AEST
+**Status**: Phase 9 - Landing Page Generator Deployed
 **Live URLs**:
 - Website: https://keyview-website-6yap3jdvaa-ts.a.run.app ✅
-- N8N: (deployment in progress) 🔄
+- N8N: https://n8n-service-6yap3jdvaa-ts.a.run.app ✅
+- Landing Page Generator: https://landing-page-generator-6yap3jdvaa-ts.a.run.app ✅
 
 ---
 
@@ -755,8 +756,200 @@ Google Cloud Platform
     │   └─ keyview-db (✅ running)
     ├─ Secret Manager
     │   └─ 6 secrets (✅ configured)
+    ├─ Cloud Storage
+    │   └─ keyview-brand-documents (✅ running)
     └─ Container Registry
         ├─ keyview-website images
-        └─ n8n images
+        ├─ n8n images
+        └─ landing-page-generator images
+```
+
+---
+
+## Landing Page Generator Service (Phase 9)
+
+### Service Overview
+**Service Name**: landing-page-generator
+**Status**: ✅ Deployed and Running
+**Live URL**: https://landing-page-generator-6yap3jdvaa-ts.a.run.app
+**Purpose**: AI-powered brand document upload and 3D landing page generation
+
+### Technology Stack
+- **Framework**: Next.js 14 with TypeScript
+- **UI**: React with Tailwind CSS
+- **Forms**: React Hook Form + Zod validation
+- **3D Graphics**: React Three Fiber + Three.js (planned)
+- **File Storage**: Google Cloud Storage
+- **AI Integration**: OpenAI/Claude API (planned)
+
+### Cloud Run Configuration
+**Resources**:
+- Memory: 2Gi
+- CPU: 2 cores
+- Min Instances: 0 (cost-optimized)
+- Max Instances: 10
+- Port: 8080
+- Public Access: ✅ Enabled (allUsers invoker role)
+
+**Environment Variables**:
+- `GCP_PROJECT_ID`: key-view-website
+- `GCS_BUCKET_NAME`: keyview-brand-documents
+
+**Authentication**:
+- Uses Application Default Credentials (no explicit key file)
+- Compute service account: 225226659046-compute@developer.gserviceaccount.com
+
+### Cloud Storage Bucket
+**Bucket Name**: keyview-brand-documents
+**Region**: australia-southeast1
+**Access Control**: Uniform bucket-level access
+**Status**: ✅ Created and Configured
+
+**IAM Permissions**:
+- `allUsers` → `roles/storage.objectViewer` (public read access to uploaded files)
+- `serviceAccount:225226659046-compute@developer.gserviceaccount.com` → `roles/storage.objectAdmin` (read/write from Cloud Run)
+
+**Allowed File Types**:
+- PDF documents
+- DOCX documents
+- Images (JPG, PNG, WEBP)
+- Maximum file size: 10MB
+
+### Features Implemented (Phase 9.1 & 9.2)
+
+#### 1. Brand Document Upload System
+- Secure file upload API endpoint (`/api/upload`)
+- File type validation (PDF, DOCX, images)
+- File size validation (max 10MB)
+- Automatic unique filename generation with timestamp
+- Direct upload to Google Cloud Storage
+- Public URL generation for uploaded files
+
+#### 2. Multi-Step Brand Questionnaire Form
+**Step 1: Upload Brand Document**
+- Drag-and-drop file upload interface
+- Real-time upload progress
+- Upload success confirmation
+
+**Step 2: Company Information**
+- Company name (required)
+- Tagline (optional)
+- Industry (required)
+- Email (required)
+- Website URL (optional)
+
+**Step 3: Brand Details**
+- Target audience description (required)
+- Brand personality selection (8 options):
+  - Professional, Playful, Luxurious, Minimal, Bold, Elegant, Modern, Traditional
+- Preferred style (6 options):
+  - Minimalist, Vibrant, Dark, Light, Gradient, Corporate
+- Primary & secondary color pickers
+- Key features/services (required)
+- Call-to-action text (required)
+
+**Step 4: Review & Submit**
+- Form data review
+- Submit for AI processing
+
+### Form Validation
+- Schema-based validation using Zod
+- Real-time error messages
+- Required field enforcement
+- Email format validation
+- URL format validation
+
+### Next Steps (Remaining Phase 9 Tasks)
+
+#### Phase 9.3: AI Content Analysis (In Progress)
+- [ ] Choose AI provider (OpenAI GPT-4 or Claude)
+- [ ] Implement document parsing system
+- [ ] Extract brand guidelines from PDFs/DOCX
+- [ ] Generate landing page content (headlines, copy, CTAs)
+- [ ] Create dynamic color palettes from brand colors
+- [ ] Generate typography suggestions
+
+#### Phase 9.4: 3D Landing Page Generator
+- [ ] Implement React Three Fiber setup
+- [ ] Create 3D landing page templates
+- [ ] Build animated hero section with 3D objects
+- [ ] Add parallax scrolling effects
+- [ ] Implement dynamic content injection
+- [ ] Optimize performance for mobile devices
+
+#### Phase 9.5: N8N Workflow Integration
+- [ ] Create N8N workflow for end-to-end automation:
+  1. Form submission webhook trigger
+  2. File upload to Cloud Storage
+  3. AI API call for content generation
+  4. Landing page generation from template
+  5. Deployment to unique URL
+  6. Email notification with preview link
+
+#### Phase 9.6: Preview & Deployment System
+- [ ] Generate unique preview URLs
+- [ ] Allow client edits and regeneration
+- [ ] One-click deployment to custom domain
+- [ ] Version history and rollback capability
+- [ ] Code export functionality
+
+### Cost Estimates
+**Current Monthly Costs**:
+- Cloud Run (landing-page-generator): ~$0-5/month (with min instances = 0)
+- Cloud Storage: ~$0.02/GB/month + $0.01 per 10,000 operations
+- Estimated per landing page generation: $0.06-0.11
+
+**Total Additional Infrastructure Cost**: ~$5-10/month (depending on usage)
+
+### Deployment
+**Method**: GitHub Actions workflow
+**Trigger**: Manual via `workflow_dispatch` with `service=landing-page-generator`
+**Build Time**: ~4-5 minutes
+**Dockerfile**: Multi-stage build with standalone Next.js output
+
+**Command**:
+```bash
+gh workflow run deploy-services.yml -f service=landing-page-generator
+```
+
+### Files Structure
+```
+services/landing-page-generator/
+├── app/
+│   ├── api/
+│   │   └── upload/
+│   │       └── route.ts                    # File upload API endpoint
+│   ├── components/
+│   │   └── BrandUploadForm.tsx            # Multi-step form component
+│   ├── globals.css                         # Tailwind CSS styles
+│   ├── layout.tsx                          # Root layout
+│   └── page.tsx                            # Homepage (renders form)
+├── lib/
+│   └── schema.ts                           # Zod validation schema
+├── public/                                  # Static assets
+├── .dockerignore                           # Docker ignore rules
+├── .env.local                              # Local environment variables (not in Git)
+├── .env.example                            # Environment variables template
+├── cloudbuild.yaml                         # Cloud Build configuration
+├── Dockerfile                              # Multi-stage Next.js container
+├── next.config.ts                          # Next.js configuration (standalone output)
+├── package.json                            # Dependencies
+└── tsconfig.json                           # TypeScript configuration
+```
+
+### Testing
+**Live URL**: https://landing-page-generator-6yap3jdvaa-ts.a.run.app
+
+Test the upload form:
+1. Visit the URL
+2. Upload a brand document (PDF, DOCX, or image)
+3. Fill out the multi-step questionnaire
+4. Submit (currently shows alert, AI generation not yet implemented)
+
+**Development Testing**:
+```bash
+cd services/landing-page-generator
+npm run dev
+# Visit http://localhost:3000
 ```
 
