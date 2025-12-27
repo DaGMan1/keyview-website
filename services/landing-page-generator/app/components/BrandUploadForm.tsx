@@ -120,9 +120,43 @@ export default function BrandUploadForm() {
     // Generate unique ID for this landing page
     const id = Date.now().toString(36) + Math.random().toString(36).substring(2);
 
-    // Combine form data with AI analysis
-    const fullAnalysis = {
-      ...analysisResult,
+    // Build analysis structure from form data if AI analysis wasn't run
+    const fullAnalysis = analysisResult || {
+      brandAnalysis: {
+        companyName: data.companyName,
+        tagline: data.tagline || '',
+        industry: data.industry,
+        brandPersonality: data.brandPersonality,
+        targetAudience: data.targetAudience,
+        brandVoice: data.brandPersonality,
+      },
+      colorPalette: {
+        primary: data.primaryColor || '#2E5BFF',
+        secondary: data.secondaryColor || '#6E7C91',
+        accent: '#FFFFFF',
+        background: '#0F1115',
+        text: '#FFFFFF',
+      },
+      landingPageContent: {
+        heroHeadline: data.companyName,
+        heroSubheadline: data.tagline || 'Powered by Innovation',
+        valuePropositions: data.keyFeatures.split('\n').slice(0, 3),
+        features: data.keyFeatures.split('\n').map((feature, i) => ({
+          title: `Feature ${i + 1}`,
+          description: feature,
+        })),
+        callToAction: {
+          primary: data.callToAction,
+          secondary: 'Learn More',
+        },
+        aboutSection: `${data.companyName} is a ${data.industry} company serving ${data.targetAudience}.`,
+      },
+      visualConcepts: {
+        style: data.preferredStyle,
+        mood: data.brandPersonality,
+        keyVisualElements: [],
+        threeDConcepts: [],
+      },
       formData: data,
       generatedAt: new Date().toISOString(),
     };
