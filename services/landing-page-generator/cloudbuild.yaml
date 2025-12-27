@@ -33,6 +33,8 @@ steps:
       - '10'
       - '--set-env-vars'
       - 'GCP_PROJECT_ID=${PROJECT_ID},GCS_BUCKET_NAME=keyview-brand-documents'
+      - '--set-secrets'
+      - 'GEMINI_API_KEY=GEMINI_API_KEY:latest'
 
 images:
   - 'gcr.io/$PROJECT_ID/landing-page-generator:$COMMIT_SHA'

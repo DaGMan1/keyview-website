@@ -8,12 +8,16 @@ import { brandQuestionnaireSchema, type BrandQuestionnaire } from '@/lib/schema'
 export default function BrandUploadForm() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<string | null>(null);
+  const [uploadedFileType, setUploadedFileType] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<any>(null);
 
   const {
     register,
     handleSubmit,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm<BrandQuestionnaire>({
     resolver: zodResolver(brandQuestionnaireSchema),
@@ -37,6 +41,7 @@ export default function BrandUploadForm() {
 
       if (data.success) {
         setUploadedFile(data.url);
+        setUploadedFileType(data.type);
         setValue('documentUrl', data.url);
       } else {
         alert(`Upload failed: ${data.error}`);
@@ -49,10 +54,74 @@ export default function BrandUploadForm() {
     }
   };
 
+  const analyzeBrandDocument = async () => {
+    if (!uploadedFile || !uploadedFileType) return;
+
+    setIsAnalyzing(true);
+    try {
+      const formData = getValues();
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          documentUrl: uploadedFile,
+          fileType: uploadedFileType,
+          formData,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setAnalysisResult(result.analysis);
+
+        // Pre-fill form with AI-extracted data
+        const analysis = result.analysis.brandAnalysis;
+        if (analysis.companyName) setValue('companyName', analysis.companyName);
+        if (analysis.tagline) setValue('tagline', analysis.tagline);
+        if (analysis.industry) setValue('industry', analysis.industry);
+        if (analysis.targetAudience) setValue('targetAudience', analysis.targetAudience);
+        if (analysis.brandPersonality) setValue('brandPersonality', analysis.brandPersonality as any);
+
+        // Set colors
+        if (result.analysis.colorPalette?.primary) setValue('primaryColor', result.analysis.colorPalette.primary);
+        if (result.analysis.colorPalette?.secondary) setValue('secondaryColor', result.analysis.colorPalette.secondary);
+
+        // Set style
+        if (result.analysis.visualConcepts?.style) setValue('preferredStyle', result.analysis.visualConcepts.style as any);
+
+        // Set features and CTA
+        if (result.analysis.landingPageContent?.features) {
+          const featuresText = result.analysis.landingPageContent.features
+            .map((f: any) => `${f.title}: ${f.description}`)
+            .join('\n');
+          setValue('keyFeatures', featuresText);
+        }
+
+        if (result.analysis.landingPageContent?.callToAction?.primary) {
+          setValue('callToAction', result.analysis.landingPageContent.callToAction.primary);
+        }
+
+        alert('Document analyzed successfully! Form has been pre-filled with AI insights.');
+      } else {
+        alert(`Analysis failed: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Analysis error:', error);
+      alert('Failed to analyze document');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   const onSubmit = async (data: BrandQuestionnaire) => {
     console.log('Form data:', data);
-    // TODO: Send to AI API for processing
-    alert('Form submitted! Next: AI will generate your landing page.');
+    console.log('AI Analysis:', analysisResult);
+
+    // TODO: Generate 3D landing page from analysis
+    alert('Form submitted! Next: Generate 3D landing page from analysis.');
   };
 
   return (
@@ -116,14 +185,34 @@ export default function BrandUploadForm() {
                 <p className="mt-2 text-red-600 text-sm">{errors.documentUrl.message}</p>
               )}
             </div>
-            <button
-              type="button"
-              onClick={() => setCurrentStep(2)}
-              disabled={!uploadedFile}
-              className="mt-6 w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition"
-            >
-              Continue to Company Info
-            </button>
+
+            {uploadedFile && (
+              <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h3 className="font-semibold text-blue-900 mb-2">AI-Powered Analysis</h3>
+                <p className="text-sm text-blue-800 mb-3">
+                  Let Gemini AI analyze your brand document and automatically fill out the form with intelligent suggestions.
+                </p>
+                <button
+                  type="button"
+                  onClick={analyzeBrandDocument}
+                  disabled={isAnalyzing}
+                  className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition font-semibold"
+                >
+                  {isAnalyzing ? 'Analyzing with Gemini AI...' : '✨ Analyze Document with AI'}
+                </button>
+              </div>
+            )}
+
+            <div className="flex gap-4 mt-6">
+              <button
+                type="button"
+                onClick={() => setCurrentStep(2)}
+                disabled={!uploadedFile}
+                className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition"
+              >
+                Continue to Company Info
+              </button>
+            </div>
           </div>
         )}
 
