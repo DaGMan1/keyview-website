@@ -71,16 +71,21 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Make file publicly readable (optional - remove if you want private files)
-    await blob.makePublic();
+    // Generate signed URL for access (bucket has uniform bucket-level access)
+    const [signedUrl] = await blob.getSignedUrl({
+      version: 'v4',
+      action: 'read',
+      expires: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
 
-    // Get public URL
-    const publicUrl = `https://storage.googleapis.com/${bucketName}/${filename}`;
+    // For internal use, we can also use the gs:// URL
+    const publicUrl = `gs://${bucketName}/${filename}`;
 
     return NextResponse.json({
       success: true,
       filename,
       url: publicUrl,
+      signedUrl,
       size: file.size,
       type: file.type,
     });
