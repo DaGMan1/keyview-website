@@ -117,11 +117,22 @@ export default function BrandUploadForm() {
   };
 
   const onSubmit = async (data: BrandQuestionnaire) => {
-    console.log('Form data:', data);
-    console.log('AI Analysis:', analysisResult);
+    // Generate unique ID for this landing page
+    const id = Date.now().toString(36) + Math.random().toString(36).substring(2);
 
-    // TODO: Generate 3D landing page from analysis
-    alert('Form submitted! Next: Generate 3D landing page from analysis.');
+    // Combine form data with AI analysis
+    const fullAnalysis = {
+      ...analysisResult,
+      formData: data,
+      generatedAt: new Date().toISOString(),
+    };
+
+    // Store in localStorage (temporary - will use database later)
+    localStorage.setItem('latest-analysis', JSON.stringify(fullAnalysis));
+    localStorage.setItem(`analysis-${id}`, JSON.stringify(fullAnalysis));
+
+    // Navigate to preview page
+    window.location.href = `/preview/${id}`;
   };
 
   return (
