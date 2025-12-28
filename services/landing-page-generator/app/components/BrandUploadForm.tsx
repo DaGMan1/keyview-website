@@ -106,7 +106,9 @@ export default function BrandUploadForm() {
 
         alert('Document analyzed successfully! Form has been pre-filled with AI insights.');
       } else {
-        alert(`Analysis failed: ${result.error}`);
+        const errorDetails = result.details ? `\n\nDetails: ${result.details}` : '';
+        alert(`Analysis failed: ${result.error}${errorDetails}`);
+        console.error('Analysis error:', result);
       }
     } catch (error) {
       console.error('Analysis error:', error);

@@ -48,6 +48,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { documentUrl, fileType, formData } = body;
 
+    console.log('Analyze request:', { documentUrl, fileType });
+
     if (!documentUrl) {
       return NextResponse.json(
         { error: 'No document URL provided' },
@@ -55,8 +57,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!process.env.GEMINI_API_KEY) {
+      console.error('GEMINI_API_KEY not set');
+      return NextResponse.json(
+        { error: 'AI service not configured', details: 'GEMINI_API_KEY not set' },
+        { status: 500 }
+      );
+    }
+
     // Extract text from the uploaded document
+    console.log('Extracting text from document...');
     const documentText = await extractTextFromFile(documentUrl, fileType);
+    console.log('Text extracted, length:', documentText.length);
 
     // Initialize Gemini model
     const model = genAI.getGenerativeModel({
@@ -161,9 +173,11 @@ IMPORTANT:
 5. Return ONLY valid JSON, no markdown or additional text`;
 
     // Generate content with Gemini
+    console.log('Calling Gemini API...');
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
+    console.log('Gemini response received, length:', text.length);
 
     // Parse JSON response (Gemini sometimes wraps in markdown code blocks)
     let analysisData;
